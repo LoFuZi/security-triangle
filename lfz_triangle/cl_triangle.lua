@@ -20,42 +20,39 @@ Citizen.CreateThread(function()
     TriggerEvent('chat:addSuggestion', '/'..Config.Command, 'Permet de faire poser un triangle au sol', {})
 
     RegisterCommand(Config.Command, function(source)
-        if IsModelValid(Config.PropModel) then    
+        	if IsModelValid(Config.PropModel) then    
+			local ped = PlayerPedId()
 			LoadAnim('random@domestic')
-			TaskPlayAnim(PlayerPedId(), 'random@domestic', 'pickup_low', 8.0, 8.0, -1, 50, 0, false, false, false)
+			TaskPlayAnim(ped, 'random@domestic', 'pickup_low', 8.0, 8.0, -1, 50, 0, false, false, false)
 			Wait(1000)
-            local devant = -0.50
-	        local coords = GetEntityCoords(GetPlayerPed(-1)) + GetEntityForwardVector(GetPlayerPed(-1)) * - devant
-			local headingJoueur = GetEntityHeading(GetPlayerPed(-1))
-			local prop = CreateObject(GetHashKey(Config.PropModel), coords, true)  
-			local closeprop = GetClosestObjectOfType(GetEntityCoords(GetPlayerPed(-1)), 1.5, GetHashKey(Config.PropModel), 70)
-			SetEntityHeading(closeprop, headingJoueur)
-			PlaceObjectOnGroundProperly(closeprop)
 
-			local pCoords = GetEntityCoords(closeprop) 
-			local _, ground = GetGroundZFor_3dCoord(pCoords.x, pCoords.y, pCoords.z, true)
-			
-			SetEntityCoords(closeprop, pCoords.x, pCoords.y, ground, true, false, false, false) 
-
-			FreezeEntityPosition(closeprop, true)
-			ClearPedTasks(GetPlayerPed(-1))
+			local prop = CreateObject(GetHashKey(Config.PropModel), GetEntityCoords(ped) + GetEntityForwardVector(ped) * 0.50, true)  
+			while not DoesEntityExist(prop) do Wait(5) end
+			SetEntityHeading(prop, GetEntityHeading(ped))
+			PlaceObjectOnGroundProperly(prop)
+			FreezeEntityPosition(prop, true)
+			ClearPedTasks(ped)
 		else 
-			print("props invalide")
-			return
+			print("Prop invalide")
 		end
 	end, false)
 
 	RegisterCommand(Config.CommandDel, function(source)
 		if IsModelValid(Config.PropModel) then
+			local ped = PlayerPedId()
+			model = GetClosestObjectOfType(GetEntityCoords(ped), 5.0 , GetHashKey(Config.PropModel), 70)
+			if model == 0 then print("Aucun props trouvé à proximité") return end
 			LoadAnim('random@domestic')
-			TaskPlayAnim(PlayerPedId(), 'random@domestic', 'pickup_low', 8.0, 8.0, -1, 50, 0, false, false, false)
+			TaskPlayAnim(ped, 'random@domestic', 'pickup_low', 8.0, 8.0, -1, 50, 0, false, false, false)
 			Wait(1000)
-			model = GetClosestObjectOfType(GetEntityCoords(GetPlayerPed(-1)), 5.0 , GetHashKey(Config.PropModel), 70)
+			while not NetworkHasControlOfEntity(model) do 
+				NetworkRequestControlOfEntity(model) 
+				Wait(15) 
+			end
 			DeleteEntity(model)  
-			ClearPedTasks(GetPlayerPed(-1))
+			ClearPedTasks(ped)
 		else 
-			print("pas de props")
-			return
+			print("Prop invalide")
 		end 
 	end, false)	
 end)
